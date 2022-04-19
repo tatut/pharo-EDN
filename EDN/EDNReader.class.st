@@ -39,14 +39,14 @@ EDNReader >> in: aReadStream [
   in := aReadStream 
 ]
 
-{ #category : #'meta-object-protocol' }
+{ #category : #reading }
 EDNReader >> read [
 	"Read EDN data from input"
 	self skipWhitespace.
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readEscapeSequence [
   | ch |
   ch := in next.
@@ -59,7 +59,7 @@ EDNReader >> readEscapeSequence [
 		
 ]
 
-{ #category : #'write and read' }
+{ #category : #'private - reading' }
 EDNReader >> readString [
 	"Read a string in double quotes"
 	^ String streamContents: [ :out |
@@ -72,7 +72,7 @@ EDNReader >> readString [
 		 in next. "read the end doublequote" ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> skipWhitespace [ 
 	"Skip any whitespace characters"
 	| ws |
