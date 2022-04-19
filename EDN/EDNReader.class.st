@@ -88,6 +88,7 @@ EDNReader >> read [
 	"Not any of those, dispatch on the next character."
 	ch := in peek.
 	ch = $" ifTrue: [ ^ self readString ].
+	ch = $: ifTrue: [ ^ self readKeyword ].
 	
 	"check -/+/. as first symbo char, then next one must not be a digit"
 	(self class isSymbolFirstCharacter: ch) ifTrue: [ ^ self readSymbol ].
@@ -107,6 +108,24 @@ EDNReader >> readEscapeSequence [
   "FIXME: support them all"
   Error signal: 'Unrecognized escape sequence'.
 		
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readKeyword [
+	"Read a keyword."
+	| part1 part2 |
+	in next. "consume the colon"
+	part1 := self readSymbol.
+	in peek = $/ 
+	  ifTrue: [ 
+		in next. "consume the slash"	
+		(self class isSymbolFirstCharacter: in peek) ifFalse: [ Error signal: 'Illegal keyword name part start characted: ', in peek asString ].
+		part2 := self readSymbol.
+		"PENDING: should create an EDNKeyword class that interns instances.
+	   Don't want to intern with smalltalk selectors symbols."
+		^ (':',part1,'/',part2) asSymbol ]
+    ifFalse: [
+	   ^ (':',part1) ] 
 ]
 
 { #category : #'write and read' }

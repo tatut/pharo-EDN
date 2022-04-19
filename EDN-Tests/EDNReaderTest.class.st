@@ -19,6 +19,12 @@ EDNReaderTest >> testBoolean [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testKeyword [
+	self assert: (self read: ':user/name') equals: #':user/name'.
+	self assert: (self read: ':my-keyword') equals: #':my-keyword'.
+]
+
+{ #category : #tests }
 EDNReaderTest >> testNil [
 	"Read nil"
 	self assert: (self read: 'nil{:then "a-map"}') equals: nil 
