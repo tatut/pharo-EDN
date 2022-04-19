@@ -5,8 +5,6 @@ I read Extensible Data Notation from an input stream.
 - read 
  
 >>> EDNReader new in: aReadStream; read 
-  
-
 "
 Class {
 	#name : #EDNReader,
@@ -19,6 +17,25 @@ Class {
 	],
 	#category : #EDN
 }
+
+{ #category : #testing }
+EDNReader class >> isSymbolCharacter: ch [
+  "check if ch is a symbol character (other than the first)"
+  ch ifNil: [ ^ false ].
+  ^ ch isLetter | ch isDigit | 
+	 (ch = $:) | (ch = $.) | (ch = $*) | (ch = $+) | 
+	 (ch = $!) | (ch = $-) | (ch = $_) | (ch = $?) | 
+	 (ch = $$) | (ch = $%) | (ch = $&) | (ch = $=) | 
+	 (ch = $<) | (ch = $>) 
+]
+
+{ #category : #testing }
+EDNReader class >> isSymbolFirstCharacter: ch [
+  "check if ch is a symbol first character"
+  ch ifNil: [ ^ false ].
+  ^ ch isDigit not & (self isSymbolCharacter: ch)
+
+]
 
 { #category : #'as yet unclassified' }
 EDNReader class >> whitespaceCharacters [ 
@@ -39,11 +56,44 @@ EDNReader >> in: aReadStream [
   in := aReadStream 
 ]
 
-{ #category : #reading }
+{ #category : #accessing }
+EDNReader >> lookingAt: aWord [
+	"Check if we are looking at the given word, and the next character after that is not a symbol character.
+	Answer with true if the looking at the word (stream position is after the word) or false 
+	if not (stream position is unchanged)."
+	| pos |
+	pos := in position.
+	aWord do: [ :c |
+		c = in next ifFalse: [ 
+			in position: pos.
+			^ false ]
+	].
+	(self class isSymbolCharacter: in peek) ifTrue: [ 
+		in position: pos.
+		^ false ].
+	^ true 
+]
+
+{ #category : #'meta-object-protocol' }
 EDNReader >> read [
 	"Read EDN data from input"
+	| ch |
 	self skipWhitespace.
 	
+	"Read constants true/false/nil"
+	(self lookingAt: 'true') ifTrue: [ ^ true ].
+	(self lookingAt: 'false') ifTrue: [ ^ false ].
+	(self lookingAt: 'nil') ifTrue: [ ^ nil ].
+	 
+	"Not any of those, dispatch on the next character."
+	ch := in peek.
+	ch = $" ifTrue: [ ^ self readString ].
+	
+	"check -/+/. as first symbo char, then next one must not be a digit"
+	(self class isSymbolFirstCharacter: ch) ifTrue: [ ^ self readSymbol ].
+	
+	"Can't determine what to dispatch, signal parse error"
+  ^ Error signal: 'Unrecognized dispatch character: ',ch asString.
 ]
 
 { #category : #'private - reading' }
@@ -59,9 +109,10 @@ EDNReader >> readEscapeSequence [
 		
 ]
 
-{ #category : #'private - reading' }
+{ #category : #'write and read' }
 EDNReader >> readString [
 	"Read a string in double quotes"
+	in next. "read the starting double quote" 
 	^ String streamContents: [ :out |
 		  | ch |
 		  [ in peek = $" ] whileFalse: [ 
@@ -70,6 +121,23 @@ EDNReader >> readString [
 			    ifTrue: [ out nextPut: self readEscapeSequence ] 
 			    ifFalse: [ out nextPut: ch ] ].
 		 in next. "read the end doublequote" ]
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readSymbol [
+	"Read a symbol (characters)"
+	^ ByteSymbol streamContents: [ :out |
+		 out nextPut: (in next). "1st character is the symbol start char"
+		 [ self class isSymbolCharacter: in peek ] whileTrue: [ 
+			out nextPut: (in next) ]. 
+		]
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readSymbolOrReserved [
+	"Read a symbol (characters) or one of the constants: nil, true or false"
+	| sym |
+	sym := String streamContents: [ :out  ]
 ]
 
 { #category : #'private - reading' }
