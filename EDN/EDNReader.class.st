@@ -118,7 +118,8 @@ EDNReader >> read [
 	ch = $" ifTrue: [ ^ self readString ].
 	ch = $: ifTrue: [ ^ self readKeyword ].
 	ch = ${ ifTrue: [ ^ self readMap ].
-	
+	ch = $[ ifTrue: [ ^ self readVector ].
+		
 	"Read number, starting with +/- or digit"
 	self lookingAtNumber ifTrue: [ ^ self readNumber ].
 	
@@ -223,6 +224,20 @@ EDNReader >> readSymbol [
 		 [ self class isSymbolCharacter: in peek ] whileTrue: [ 
 			out nextPut: (in next) ]. 
 		]
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readVector [
+	| v | 
+	in next. "consume starting bracket"
+	v := OrderedCollection new.
+	[ self skipWhitespace. in peek = $] ] 
+    whileFalse: [ v add: self read ].
+  in next. "consume ending bracket"
+	^ v
+
+	
+	
 ]
 
 { #category : #'private - reading' }

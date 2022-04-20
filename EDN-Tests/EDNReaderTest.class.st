@@ -60,6 +60,17 @@ EDNReaderTest >> testReadString [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadVector [
+	self assert: (self read:'  [ 1 2,  
+		 -3.4 ]') equals: ({1 . 2 . -3.4 } asOrderedCollection).
+	self assert: (self read:'[[[1]] :<-deep]')
+	     equals: (OrderedCollection 
+	              with: (OrderedCollection with: (OrderedCollection with: 1))
+	              with: #':<-deep')
+
+]
+
+{ #category : #tests }
 EDNReaderTest >> testSkipWhitespace [
 	| in |	
 	in := ReadStream on: '  , 
