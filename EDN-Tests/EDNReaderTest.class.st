@@ -31,6 +31,13 @@ EDNReaderTest >> testNil [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadNumber [
+	self assert: (self read: '-420.69') equals: -420.69.
+	self assert: (self read: '+666') equals: 666.
+	self assert: (self read: '12.456') equals: 12.456
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadString [
   | in s |
   in := ReadStream on: '"hello \n and \"goodbye\""'.

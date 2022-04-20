@@ -74,6 +74,34 @@ EDNReader >> lookingAt: aWord [
 	^ true 
 ]
 
+{ #category : #'as yet unclassified' }
+EDNReader >> lookingAtDigit [
+	| ch | 
+	ch := in peek.
+	ch ifNil: [ ^ false ].
+	^ ch isDigit
+]
+
+{ #category : #accessing }
+EDNReader >> lookingAtNumber [
+	"Check if we are looking at a number.	
+	 Answer with boolean. Stream position is unchanged."
+	| pos ch |
+	pos := in position.
+	
+	in peek isDigit ifTrue: [ ^ true ].
+	
+	ch := in peek.
+	(ch = $-) | (ch = $+) 
+	  ifTrue: [ 
+		 in next. "consume +/- character"
+		 in peek isDigit ifTrue: [ 
+			in position: pos. 
+			^ true ]].
+	^ false
+
+]
+
 { #category : #'meta-object-protocol' }
 EDNReader >> read [
 	"Read EDN data from input"
@@ -90,7 +118,9 @@ EDNReader >> read [
 	ch = $" ifTrue: [ ^ self readString ].
 	ch = $: ifTrue: [ ^ self readKeyword ].
 	
-	"check -/+/. as first symbo char, then next one must not be a digit"
+	"Read number, starting with +/- or digit"
+	self lookingAtNumber ifTrue: [ ^ self readNumber ].
+	
 	(self class isSymbolFirstCharacter: ch) ifTrue: [ ^ self readSymbol ].
 	
 	"Can't determine what to dispatch, signal parse error"
@@ -128,6 +158,29 @@ EDNReader >> readKeyword [
 	   ^ (':',part1) ] 
 ]
 
+{ #category : #'as yet unclassified' }
+EDNReader >> readNumber [
+	| sign integerPart decimalPart decimals |
+	sign := 1.
+	in peek = $+ ifTrue: [ in next ].
+	in peek = $- ifTrue: [ sign := -1. in next ].
+	
+	integerPart := 0.
+	[ self lookingAtDigit ] whileTrue: [ integerPart := integerPart * 10 + (in next digitValue) ].
+
+  in peek = $. ifTrue: [ 
+	  in next. "we have a decimal part"
+     decimals := 1.
+     decimalPart := 0.
+     [ self lookingAtDigit ] whileTrue: [ 
+	     decimalPart := decimalPart * 10 + (in next digitValue). 
+	     decimals := decimals * 10 ]	.
+	  ^ sign * (integerPart + (decimalPart/decimals) asFloat)  
+	 ]
+  ifFalse: [  ^ sign * integerPart ]
+
+]
+
 { #category : #'write and read' }
 EDNReader >> readString [
 	"Read a string in double quotes"
@@ -150,13 +203,6 @@ EDNReader >> readSymbol [
 		 [ self class isSymbolCharacter: in peek ] whileTrue: [ 
 			out nextPut: (in next) ]. 
 		]
-]
-
-{ #category : #'as yet unclassified' }
-EDNReader >> readSymbolOrReserved [
-	"Read a symbol (characters) or one of the constants: nil, true or false"
-	| sym |
-	sym := String streamContents: [ :out  ]
 ]
 
 { #category : #'private - reading' }
