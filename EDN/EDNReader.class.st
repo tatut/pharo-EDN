@@ -89,7 +89,7 @@ EDNReader >> lookingAtNumber [
 	| pos ch |
 	pos := in position.
 	
-	in peek isDigit ifTrue: [ ^ true ].
+	self lookingAtDigit ifTrue: [ ^ true ].
 	
 	ch := in peek.
 	(ch = $-) | (ch = $+) 
@@ -117,6 +117,7 @@ EDNReader >> read [
 	ch := in peek.
 	ch = $" ifTrue: [ ^ self readString ].
 	ch = $: ifTrue: [ ^ self readKeyword ].
+	ch = ${ ifTrue: [ ^ self readMap ].
 	
 	"Read number, starting with +/- or digit"
 	self lookingAtNumber ifTrue: [ ^ self readNumber ].
@@ -155,7 +156,26 @@ EDNReader >> readKeyword [
 	   Don't want to intern with smalltalk selectors symbols."
 		^ (':',part1,'/',part2) asSymbol ]
     ifFalse: [
-	   ^ (':',part1) ] 
+	   ^ (':',part1) asSymbol ] 
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readMap [ 
+	| m | 
+	in next. "consume starting brace"
+	m := Dictionary new.
+	[ self skipWhitespace. in peek = $} ] whileFalse: [ 
+	  | key val |
+	  key := self read.
+	  self skipWhitespace.
+	  val := self read.
+	  m at: key put: val.
+	 ].
+  in next. "consume ending brace"
+	^ m
+
+	
+	
 ]
 
 { #category : #'as yet unclassified' }

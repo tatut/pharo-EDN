@@ -31,6 +31,19 @@ EDNReaderTest >> testNil [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadMap [
+	self assert: (self read:'  { :price  42.5,
+	   "quantity"  10}') equals: (Dictionary with: (#':price'->42.5) with: ('quantity'->10)).
+	self assert: (self read:'{    }') equals: Dictionary empty.
+	self assert: (self read:'{foo bar}') equals: (Dictionary with: #foo->#bar).
+	self assert: (self read:'{:nest {:me {:harder true}}}')
+	     equals: (Dictionary with: 
+	               #':nest'->(Dictionary with: 
+	                 #':me'->(Dictionary with: 
+	                   #':harder'->true)))
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadNumber [
 	self assert: (self read: '-420.69') equals: -420.69.
 	self assert: (self read: '+666') equals: 666.
