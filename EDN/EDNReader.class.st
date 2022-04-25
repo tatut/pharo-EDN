@@ -53,6 +53,12 @@ EDNReader class >> whitespaceCharacters [
 	^ WhitespaceCharacterSet 
 ]
 
+{ #category : #'as yet unclassified' }
+EDNReader >> handle: aTagName with: aBlock [ 
+  "Register block to handle tag. Block is invoked with 2 arguments: the tag and the data."
+ 	tagHandlers at: aTagName put: aBlock
+]
+
 { #category : #accessing }
 EDNReader >> in: aReadStream [
   in := aReadStream 
@@ -139,23 +145,31 @@ EDNReader >> read [
   ^ Error signal: 'Unrecognized dispatch character: ',ch asString.
 ]
 
+{ #category : #'as yet unclassified' }
+EDNReader >> readCustomTaggedElement: tag [
+	applyTagHandlers 
+	ifTrue: [ 
+		| handler |
+		handler := tagHandlers at: tag ifAbsent: [ Error signal: 'Unregistered custom tag: ', tag asString ].
+		^ handler value: tag value: self read ]
+	ifFalse: [ ^ EDNTagged new tag: tag; data: self read; yourself ]
+]
+
 { #category : #'private - reading' }
 EDNReader >> readDispatch [ 
   "Read something starting with # dispatch character."
   | dispatch tag |
   in next.
   dispatch := in peek.
-  dispatch = $_ ifTrue: [ in next. self read. "ignore next read item"
-	^ self read ].
+  dispatch = $_ ifTrue: [ ^ self readIgnore ].
   dispatch = ${ ifTrue: [ ^ self readSet ].
 
-  "a tagged literal"
+  "a tagged element"
   in position: in position - 1.
   tag := self readKeyword allButFirst. "read keyword and remove colon"
   tag = 'uuid' ifTrue: [ ^ UUID fromString: self read ].
   tag = 'inst' ifTrue: [ ^ DateAndTime readFrom: self read readStream ].
-  Error signal: 'Custom tagged elements not supported yet'
-
+  ^ self readCustomTaggedElement: tag
 ]
 
 { #category : #'private - reading' }
@@ -169,6 +183,13 @@ EDNReader >> readEscapeSequence [
   "FIXME: support them all"
   Error signal: 'Unrecognized escape sequence'.
 		
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readIgnore [ 
+	in next. "consume _ character"
+	self suppressTagHandlers: [ self read ]. "read next item and don't invoke tag handlers"
+	^ self read 
 ]
 
 { #category : #'private - reading' }
@@ -286,4 +307,14 @@ EDNReader >> skipWhitespace [
 	| ws |
   ws := self class whitespaceCharacters.
 	[ ws includes: in peek ] whileTrue: [ in next ]
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> suppressTagHandlers: duringBlock [ 
+ | oldValue ret |
+ oldValue := applyTagHandlers.
+ applyTagHandlers := false.
+ ret := duringBlock value.
+ applyTagHandlers := oldValue.
+ ^ ret
 ]

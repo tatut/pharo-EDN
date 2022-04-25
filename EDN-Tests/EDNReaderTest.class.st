@@ -9,6 +9,11 @@ EDNReaderTest >> read: aString [
 	^ EDNReader new in: (ReadStream on: aString); read 
 ]
 
+{ #category : #'meta-object-protocol' }
+EDNReaderTest >> reader: aString [ 
+	^ EDNReader new in: (ReadStream on: aString); yourself
+]
+
 { #category : #tests }
 EDNReaderTest >> testBoolean [
 	"Read true/false"
@@ -37,8 +42,10 @@ EDNReaderTest >> testReadDispatch [
    self assert: (self read: '#inst "2022-04-25T11:15:19.315-00:00"') 
         equals: (DateAndTime fromString: '2022-04-25T11:15:19.315-00:00').
    self should: [ (self read: '#unknown "thing"') ] raise: Error 
-        whoseDescriptionIncludes: 'Custom'
-		  description: 'Custom tagged not supported yet, should throw exception.'
+        whoseDescriptionIncludes: 'Unregistered'
+		  description: 'Unregistered custom tag, should throw exception.'.
+	self assert: ((self reader: '#my "thing"') handle: 'my' with: [ :_tag :data | data asUppercase ]; read)
+	     equals: 'THING'
 
 ]
 
