@@ -31,6 +31,18 @@ EDNReaderTest >> testNil [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadDispatch [
+   self assert: (self read: '#uuid "81592ec4-cf11-4eb1-bf04-27b28d1cced6"') 
+        equals: (UUID fromString: '81592ec4-cf11-4eb1-bf04-27b28d1cced6').
+   self assert: (self read: '#inst "2022-04-25T11:15:19.315-00:00"') 
+        equals: (DateAndTime fromString: '2022-04-25T11:15:19.315-00:00').
+   self should: [ (self read: '#unknown "thing"') ] raise: Error 
+        whoseDescriptionIncludes: 'Custom'
+		  description: 'Custom tagged not supported yet, should throw exception.'
+
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadMap [
 	self assert: (self read:'  { :price  42.5,
 	   "quantity"  10}') equals: (Dictionary with: (#':price'->42.5) with: ('quantity'->10)).
@@ -48,6 +60,13 @@ EDNReaderTest >> testReadNumber [
 	self assert: (self read: '-420.69') equals: -420.69.
 	self assert: (self read: '+666') equals: 666.
 	self assert: (self read: '12.456') equals: 12.456
+]
+
+{ #category : #tests }
+EDNReaderTest >> testReadSet [
+	self assert: (self read:' #{"foo" #_"bar" "baz"}') equals: (Set with: 'foo' with: 'baz').
+	self assert: (self read: '#{    }') equals: Set empty
+
 ]
 
 { #category : #tests }

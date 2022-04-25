@@ -10,7 +10,9 @@ Class {
 	#name : #EDNReader,
 	#superclass : #Object,
 	#instVars : [
-		'in'
+		'in',
+		'tagHandlers',
+		'applyTagHandlers'
 	],
 	#classVars : [
 		'WhitespaceCharacterSet'
@@ -56,6 +58,13 @@ EDNReader >> in: aReadStream [
   in := aReadStream 
 ]
 
+{ #category : #'private - reading' }
+EDNReader >> initialize [ 
+	super initialize.
+	applyTagHandlers := true.
+	tagHandlers := Dictionary new.
+]
+
 { #category : #accessing }
 EDNReader >> lookingAt: aWord [
 	"Check if we are looking at the given word, and the next character after that is not a symbol character.
@@ -74,7 +83,7 @@ EDNReader >> lookingAt: aWord [
 	^ true 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> lookingAtDigit [
 	| ch | 
 	ch := in peek.
@@ -115,6 +124,7 @@ EDNReader >> read [
 	 
 	"Not any of those, dispatch on the next character."
 	ch := in peek.
+	ch = $# ifTrue: [ ^ self readDispatch ].
 	ch = $" ifTrue: [ ^ self readString ].
 	ch = $: ifTrue: [ ^ self readKeyword ].
 	ch = ${ ifTrue: [ ^ self readMap ].
@@ -130,6 +140,25 @@ EDNReader >> read [
 ]
 
 { #category : #'private - reading' }
+EDNReader >> readDispatch [ 
+  "Read something starting with # dispatch character."
+  | dispatch tag |
+  in next.
+  dispatch := in peek.
+  dispatch = $_ ifTrue: [ in next. self read. "ignore next read item"
+	^ self read ].
+  dispatch = ${ ifTrue: [ ^ self readSet ].
+
+  "a tagged literal"
+  in position: in position - 1.
+  tag := self readKeyword allButFirst. "read keyword and remove colon"
+  tag = 'uuid' ifTrue: [ ^ UUID fromString: self read ].
+  tag = 'inst' ifTrue: [ ^ DateAndTime readFrom: self read readStream ].
+  Error signal: 'Custom tagged elements not supported yet'
+
+]
+
+{ #category : #'private - reading' }
 EDNReader >> readEscapeSequence [
   | ch |
   ch := in next.
@@ -142,7 +171,7 @@ EDNReader >> readEscapeSequence [
 		
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readKeyword [
 	"Read a keyword."
 	| part1 part2 |
@@ -160,7 +189,7 @@ EDNReader >> readKeyword [
 	   ^ (':',part1) asSymbol ] 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readMap [ 
 	| m | 
 	in next. "consume starting brace"
@@ -179,7 +208,7 @@ EDNReader >> readMap [
 	
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readNumber [
 	| sign integerPart decimalPart decimals |
 	sign := 1.
@@ -202,6 +231,17 @@ EDNReader >> readNumber [
 
 ]
 
+{ #category : #'private - reading' }
+EDNReader >> readSet [
+  "Read a set"
+  | set |
+  in next. "consume { character"
+  set := Set new. 
+  [ self skipWhitespace. in peek = $} ] whileFalse: [ set add: self read ].
+  in next. "consume } character"
+  ^ set
+]
+
 { #category : #'write and read' }
 EDNReader >> readString [
 	"Read a string in double quotes"
@@ -216,7 +256,7 @@ EDNReader >> readString [
 		 in next. "read the end doublequote" ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readSymbol [
 	"Read a symbol (characters)"
 	^ ByteSymbol streamContents: [ :out |
@@ -226,13 +266,13 @@ EDNReader >> readSymbol [
 		]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readVector [
 	| v | 
 	in next. "consume starting bracket"
 	v := OrderedCollection new.
 	[ self skipWhitespace. in peek = $] ] 
-    whileFalse: [ v add: self read ].
+    whileFalse: [ v add: self read ]. 
   in next. "consume ending bracket"
 	^ v
 
