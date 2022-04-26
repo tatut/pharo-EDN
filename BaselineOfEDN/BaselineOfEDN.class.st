@@ -6,6 +6,7 @@ Class {
 
 { #category : #baselines }
 BaselineOfEDN >> baseline: spec [ 
+   <baseline>
 	spec for: #common do: [ spec 
 		package: 'EDN';
 		package: 'EDN-Tests' with: [ spec requires: #('EDN') ];
