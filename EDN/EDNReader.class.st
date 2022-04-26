@@ -97,6 +97,14 @@ EDNReader >> lookingAtDigit [
 	^ ch isDigit
 ]
 
+{ #category : #'private - reading' }
+EDNReader >> lookingAtLetter [
+	| ch | 
+	ch := in peek.
+	ch ifNil: [ ^ false ].
+	^ ch isLetter
+]
+
 { #category : #accessing }
 EDNReader >> lookingAtNumber [
 	"Check if we are looking at a number.	
@@ -135,6 +143,7 @@ EDNReader >> read [
 	ch = $: ifTrue: [ ^ self readKeyword ].
 	ch = ${ ifTrue: [ ^ self readMap ].
 	ch = $[ ifTrue: [ ^ self readVector ].
+	ch = $\ ifTrue: [ ^ self readCharacter ].
 		
 	"Read number, starting with +/- or digit"
 	self lookingAtNumber ifTrue: [ ^ self readNumber ].
@@ -143,6 +152,32 @@ EDNReader >> read [
 	
 	"Can't determine what to dispatch, signal parse error"
   ^ Error signal: 'Unrecognized dispatch character: ',ch asString.
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readCharacter [
+  "Read a named character or unicode"
+  | ch1 ch2 name |
+  in next. "consume \ char"
+  ch1 := in next.
+  ch2 := in peek.
+
+  "next character is not digit or letter, this is a single character like: \c"
+  ch2 ifNil: [ ^ ch1 ].
+  (ch2 isLetter | ch2 isDigit) ifFalse: [ ^ ch1 ].
+ 
+  "First character is u and next is letter or digit, read a unicode escape"
+  in position: in position - 1.
+  (ch1 = $u & (ch2 isLetter | ch2 isDigit)) ifTrue: [ ^ self readUnicodeCharacter ].
+
+  
+  "this is a named character"  
+  name := self readWord.
+  name = 'tab' ifTrue: [ ^ Character tab ].
+  name = 'newline' ifTrue: [ ^ Character lf ].
+  name = 'return' ifTrue: [ ^ Character cr ].
+  name = 'space' ifTrue: [ ^ Character space ].
+  Error signal: 'Unrecognized character name: ', name.
 ]
 
 { #category : #'as yet unclassified' }
@@ -176,10 +211,16 @@ EDNReader >> readDispatch [
 EDNReader >> readEscapeSequence [
   | ch |
   ch := in next.
+  "PENDING: should turn this into dictionary lookup?"
   ch = $\ ifTrue: [ ^ $\ ].
-  ch = $n ifTrue: [ ^ Character cr ].
+  ch = $n ifTrue: [ ^ Character lf ].
+  ch = $r ifTrue: [ ^ Character cr ].
   ch = $t ifTrue: [ ^ Character tab ].
+  ch = $f ifTrue: [ ^ Character newPage ].
+  ch = $b ifTrue: [ ^ Character backspace ].
   ch = $" ifTrue: [ ^ $" ].
+  ch = $' ifTrue: [ ^ $' ].
+  ch = $\ ifTrue: [ ^ $\ ].
   "FIXME: support them all"
   Error signal: 'Unrecognized escape sequence'.
 		
@@ -287,6 +328,13 @@ EDNReader >> readSymbol [
 		]
 ]
 
+{ #category : #'as yet unclassified' }
+EDNReader >> readUnicodeCharacter [
+ "Read a unicode character escape"
+  in next. "consume the u character"
+  ^ ('16r', (in next: 4)) asNumber
+]
+
 { #category : #'private - reading' }
 EDNReader >> readVector [
 	| v | 
@@ -299,6 +347,13 @@ EDNReader >> readVector [
 
 	
 	
+]
+
+{ #category : #'private - decoding' }
+EDNReader >> readWord [ 
+  ^ String streamContents: [ :out |
+	  [ self lookingAtLetter ] whileTrue: [ out << in next ]
+	 ]
 ]
 
 { #category : #'private - reading' }

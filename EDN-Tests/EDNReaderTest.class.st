@@ -54,6 +54,14 @@ EDNReaderTest >> testRead [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadCharacter [
+	self assert: (self read:'\space') equals: Character space.
+   self assert: (self read:'\ufafa') asInteger equals: 64250.
+   self assert: (self read:'\u  ') equals: $u.
+   self assert: (self read:'\5') equals: $5.
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadDispatch [
    self assert: (self read: '#uuid "81592ec4-cf11-4eb1-bf04-27b28d1cced6"') 
         equals: (UUID fromString: '81592ec4-cf11-4eb1-bf04-27b28d1cced6').
@@ -65,6 +73,19 @@ EDNReaderTest >> testReadDispatch [
 	self assert: ((self reader: '#my "thing"') handle: 'my' with: [ :_tag :data | data asUppercase ]; read)
 	     equals: 'THING'
 
+]
+
+{ #category : #tests }
+EDNReaderTest >> testReadEscapeSequence [
+	self assert: (self read:'"1\n\n2"') asArray equals: { $1 . Character lf . Character lf . $2 }.
+	self assert: (self read: '"\r"') first equals: Character cr.
+	self assert: (self read: '"Foo \"meta\" O''Barsky"') equals: 'Foo "meta" O''Barsky'.
+]
+
+{ #category : #tests }
+EDNReaderTest >> testReadIgnore [
+	self assert: (self read:'#_1 2') equals: 2.
+	self assert: (self read:'[#_#_#_1 2 3 4 5]') equals: (OrderedCollection with: 4 with: 5)
 ]
 
 { #category : #tests }
