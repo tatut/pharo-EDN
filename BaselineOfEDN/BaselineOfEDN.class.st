@@ -1,7 +1,7 @@
 Class {
 	#name : #BaselineOfEDN,
 	#superclass : #BaselineOf,
-	#category : #EDN
+	#category : #BaselineOfEDN
 }
 
 { #category : #baselines }
