@@ -303,10 +303,14 @@ EDNReader >> readVector [
 
 { #category : #'private - reading' }
 EDNReader >> skipWhitespace [ 
-	"Skip any whitespace characters"
-	| ws |
+	"Skip any whitespace characters and comments"
+	| ws ch |
   ws := self class whitespaceCharacters.
-	[ ws includes: in peek ] whileTrue: [ in next ]
+	[ ch := in peek.
+	  (ch = $;) | (ws includes: ch) ] whileTrue: [ 
+	ch := in next.
+	ch = $; ifTrue: [ in skipTo: Character cr ]
+	 ]
 ]
 
 { #category : #'as yet unclassified' }

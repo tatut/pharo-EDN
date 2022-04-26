@@ -36,6 +36,24 @@ EDNReaderTest >> testNil [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testRead [
+  | user |
+  user := (self read: '{
+ :user/id #uuid "81592ec4-cf11-4eb1-bf04-27b28d1cced6"
+ :user/name "Foo Barsky" 
+ :user/roles #_"skip me" #{:admin}
+ :user/config {:theme :dark} ; this is a comment
+ :user/joined-at #inst "2022-04-25T16:15:19.315-00:00"
+}').
+
+  self assert: (user at: #':user/id') class equals: UUID.
+  self assert: (user at: #':user/name') equals: 'Foo Barsky'.
+  self assert: (user at: #':user/config') equals: (Dictionary with: #':theme' -> #':dark').
+  self assert: (user at: #':user/roles') equals: (Set with: #':admin').
+  self assert: (user at: #':user/joined-at') year equals: 2022.
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadDispatch [
    self assert: (self read: '#uuid "81592ec4-cf11-4eb1-bf04-27b28d1cced6"') 
         equals: (UUID fromString: '81592ec4-cf11-4eb1-bf04-27b28d1cced6').
