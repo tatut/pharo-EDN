@@ -117,11 +117,7 @@ EDNReaderTest >> testReadSet [
 
 { #category : #tests }
 EDNReaderTest >> testReadString [
-  | in s |
-  in := ReadStream on: '"hello \n and \"goodbye\""'.
-  s := EDNReader new in: in; readString.
-  self assert: s equals: 'hello 
- and "goodbye"' 
+  self assert: (self read: '"hello \n and \"goodbye\""') equals: 'hello <l> and "goodbye"' expandMacros  
 ]
 
 { #category : #tests }
