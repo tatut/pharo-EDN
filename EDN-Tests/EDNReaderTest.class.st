@@ -89,6 +89,11 @@ EDNReaderTest >> testReadIgnore [
 ]
 
 { #category : #tests }
+EDNReaderTest >> testReadList [
+	self assert: (self read:'(1 "two" :three)') equals: (LinkedList withAll: { 1 . 'two' . #':three' }) 
+]
+
+{ #category : #tests }
 EDNReaderTest >> testReadMap [
 	self assert: (self read:'  { :price  42.5,
 	   "quantity"  10}') equals: (Dictionary with: (#':price'->42.5) with: ('quantity'->10)).

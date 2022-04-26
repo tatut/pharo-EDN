@@ -143,6 +143,7 @@ EDNReader >> read [
 	ch = $: ifTrue: [ ^ self readKeyword ].
 	ch = ${ ifTrue: [ ^ self readMap ].
 	ch = $[ ifTrue: [ ^ self readVector ].
+   ch = $( ifTrue: [ ^ self readList ].
 	ch = $\ ifTrue: [ ^ self readCharacter ].
 		
 	"Read number, starting with +/- or digit"
@@ -249,6 +250,18 @@ EDNReader >> readKeyword [
 		^ (':',part1,'/',part2) asSymbol ]
     ifFalse: [
 	   ^ (':',part1) asSymbol ] 
+]
+
+{ #category : #'as yet unclassified' }
+EDNReader >> readList [
+	| lst |
+	lst := LinkedList new.
+	in next. "consume ( character"
+	[ self skipWhitespace. in peek = $) ] whileFalse: [ 
+		lst add: self read 
+	].
+   in next. "consume ) character"
+   ^ lst
 ]
 
 { #category : #'private - reading' }
