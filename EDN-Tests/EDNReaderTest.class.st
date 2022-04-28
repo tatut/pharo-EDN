@@ -24,12 +24,6 @@ EDNReaderTest >> testBoolean [
 ]
 
 { #category : #tests }
-EDNReaderTest >> testKeyword [
-	self assert: (self read: ':user/name') equals: #':user/name'.
-	self assert: (self read: ':my-keyword') equals: #':my-keyword'.
-]
-
-{ #category : #tests }
 EDNReaderTest >> testNil [
 	"Read nil"
 	self assert: (self read: 'nil{:then "a-map"}') equals: nil 
@@ -86,6 +80,12 @@ EDNReaderTest >> testReadEscapeSequence [
 EDNReaderTest >> testReadIgnore [
 	self assert: (self read:'#_1 2') equals: 2.
 	self assert: (self read:'[#_#_#_1 2 3 4 5]') equals: (OrderedCollection with: 4 with: 5)
+]
+
+{ #category : #tests }
+EDNReaderTest >> testReadKeyword [
+	self assert: (self read: ':user/name') equals: #':user/name'.
+	self assert: (self read: ':my-keyword') equals: #':my-keyword'.
 ]
 
 { #category : #tests }
