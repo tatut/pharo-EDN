@@ -16,6 +16,11 @@ Class {
 	#category : #EDN
 }
 
+{ #category : #'as yet unclassified' }
+EDNWriter class >> toEDNString: aValue [
+	^ String streamContents: [ :o | self new out: o; write: aValue ]
+]
+
 { #category : #accessing }
 EDNWriter >> out [
 
