@@ -53,7 +53,7 @@ EDNReader class >> whitespaceCharacters [
 	^ WhitespaceCharacterSet 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #reading }
 EDNReader >> handle: aTagName with: aBlock [ 
   "Register block to handle tag. Block is invoked with 2 arguments: the tag and the data."
  	tagHandlers at: aTagName put: aBlock
@@ -64,14 +64,14 @@ EDNReader >> in: aReadStream [
   in := aReadStream 
 ]
 
-{ #category : #'private - reading' }
+{ #category : #initialization }
 EDNReader >> initialize [ 
 	super initialize.
 	applyTagHandlers := true.
 	tagHandlers := Dictionary new.
 ]
 
-{ #category : #accessing }
+{ #category : #'private - reading' }
 EDNReader >> lookingAt: aWord [
 	"Check if we are looking at the given word, and the next character after that is not a symbol character.
 	Answer with true if the looking at the word (stream position is after the word) or false 
@@ -105,7 +105,7 @@ EDNReader >> lookingAtLetter [
 	^ ch isLetter
 ]
 
-{ #category : #accessing }
+{ #category : #'private - reading' }
 EDNReader >> lookingAtNumber [
 	"Check if we are looking at a number.	
 	 Answer with boolean. Stream position is unchanged."
@@ -125,7 +125,7 @@ EDNReader >> lookingAtNumber [
 
 ]
 
-{ #category : #'meta-object-protocol' }
+{ #category : #reading }
 EDNReader >> read [
 	"Read EDN data from input"
 	| ch |
@@ -155,7 +155,7 @@ EDNReader >> read [
   ^ Error signal: 'Unrecognized dispatch character: ',ch asString.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readCharacter [
   "Read a named character or unicode"
   | ch1 ch2 name |
@@ -181,7 +181,7 @@ EDNReader >> readCharacter [
   Error signal: 'Unrecognized character name: ', name.
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readCustomTaggedElement: tag [
 	applyTagHandlers 
 	ifTrue: [ 
@@ -227,7 +227,7 @@ EDNReader >> readEscapeSequence [
 		
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readIgnore [ 
 	in next. "consume _ character"
 	self suppressTagHandlers: [ self read ]. "read next item and don't invoke tag handlers"
@@ -252,7 +252,7 @@ EDNReader >> readKeyword [
 	   ^ (':',part1) asSymbol ] 
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readList [
 	| lst |
 	lst := LinkedList new.
@@ -317,7 +317,7 @@ EDNReader >> readSet [
   ^ set
 ]
 
-{ #category : #'write and read' }
+{ #category : #'private - reading' }
 EDNReader >> readString [
 	"Read a string in double quotes"
 	in next. "read the starting double quote" 
@@ -341,7 +341,7 @@ EDNReader >> readSymbol [
 		]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'private - reading' }
 EDNReader >> readUnicodeCharacter [
  "Read a unicode character escape"
   in next. "consume the u character"
@@ -362,7 +362,7 @@ EDNReader >> readVector [
 	
 ]
 
-{ #category : #'private - decoding' }
+{ #category : #'private - reading' }
 EDNReader >> readWord [ 
   ^ String streamContents: [ :out |
 	  [ self lookingAtLetter ] whileTrue: [ out << in next ]
@@ -381,7 +381,7 @@ EDNReader >> skipWhitespace [
 	 ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #reading }
 EDNReader >> suppressTagHandlers: duringBlock [ 
  | oldValue ret |
  oldValue := applyTagHandlers.
