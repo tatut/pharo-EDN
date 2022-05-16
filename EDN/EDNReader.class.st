@@ -285,7 +285,7 @@ EDNReader >> readMap [
 
 { #category : #'private - reading' }
 EDNReader >> readNumber [
-	| sign integerPart decimalPart decimals |
+	| sign integerPart decimalPart decimals num |
 	sign := 1.
 	in peek = $+ ifTrue: [ in next ].
 	in peek = $- ifTrue: [ sign := -1. in next ].
@@ -299,10 +299,23 @@ EDNReader >> readNumber [
      decimalPart := 0.
      [ self lookingAtDigit ] whileTrue: [ 
 	     decimalPart := decimalPart * 10 + (in next digitValue). 
-	     decimals := decimals * 10 ]	.
-	  ^ sign * (integerPart + (decimalPart/decimals) asFloat)  
+	     decimals := decimals * 10 ].
+ 
+    in peek = $M ifTrue: [ 
+	    in next.
+	    ^ ScaledDecimal new 
+	        setNumerator: sign * (integerPart * decimals + decimalPart) 
+	        denominator: decimals
+	        scale: (decimals log: 10) ceiling.
+	  ]
+    ifFalse: [ ^ sign * (integerPart + (decimalPart/decimals) asFloat) ] 
 	 ]
-  ifFalse: [  ^ sign * integerPart ]
+  ifFalse: [ 
+	 "only integer part"
+	 in peek = $M 
+	   ifTrue: [ ^ (sign * integerPart) asScaledDecimal ]
+	   ifFalse: [ ^ sign * integerPart ] 
+  ].
 
 ]
 

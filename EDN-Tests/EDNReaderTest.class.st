@@ -110,7 +110,10 @@ EDNReaderTest >> testReadMap [
 EDNReaderTest >> testReadNumber [
 	self assert: (self read: '-420.69') equals: -420.69.
 	self assert: (self read: '+666') equals: 666.
-	self assert: (self read: '12.456') equals: 12.456
+	self assert: (self read: '12.456') equals: 12.456.
+	self assert: (self read: '12.34M') equals: 12.34s2.
+	self assert: (self read: '666M') equals: 666s0.
+	self assert: (self read: '56.0000789M') equals: 56.0000789s7.
 ]
 
 { #category : #tests }
